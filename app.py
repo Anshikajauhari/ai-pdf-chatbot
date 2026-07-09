@@ -13,7 +13,6 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_groq import ChatGroq
 
 from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 
 import os
@@ -74,33 +73,11 @@ chain = (
 
 st.header("365 Q&A Chatbot", divider = True)
 
-question = st.text_input("\nType your question:\n")
-
-if question:
-    response = chain.invoke(question)
-    st.write(response)
-
-
-import os
-
-DB_PATH = r"C:\Users\anshi\intro_ai\intro.ai"
-
-vectorstore = Chroma(
-    persist_directory=DB_PATH,
-    embedding_function=embedding
-)
+question = st.text_input("Type your question:")
 
 if st.button("Ask"):
     if question:
-        response_placeholder = st.empty()
-        response_text = "" 
-
-        result = chain.stream(question)
-
-        for chunk in result:
-            response_text += chunk
-            response_placeholder.markdown(response_text + "▌")  
-
+        response = chain.invoke(question)
+        st.write(response)
     else:
-        st.warning("Please type your question.", icon="⚠️") 
-
+        st.warning("Please type your question.", icon="⚠️")
