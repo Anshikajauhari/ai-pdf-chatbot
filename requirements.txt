@@ -9,5 +9,6 @@ langchain-huggingface
 chromadb
 sentence-transformers
 torch
+torchvision
 transformers
 pypdf
