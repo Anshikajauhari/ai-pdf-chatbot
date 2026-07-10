@@ -5,6 +5,8 @@ import os
 
 load_dotenv()
 
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import TokenTextSplitter
 from langchain_core.messages import SystemMessage
 from langchain_core.prompts import HumanMessagePromptTemplate, ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -27,21 +29,56 @@ embedding = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2",
 )
 
-vectorstore = Chroma(
-    persist_directory="./intro.ai",
-    embedding_function=embedding
-)
+DB_PATH = "./intro.ai"
+PDF_PATH = "Intro+to+AI+-+Course+notes.pdf"
+
+if not os.path.exists(DB_PATH):
+
+    loader = PyPDFLoader(PDF_PATH)
+    docs = loader.load()
+
+    splitter = TokenTextSplitter(
+        encoding_name="cl100k_base",
+        chunk_size=200,
+        chunk_overlap=40
+    )
+
+    split_docs = splitter.split_documents(docs)
+
+    vectorstore = Chroma.from_documents(
+        documents=split_docs,
+        embedding=embedding,
+        persist_directory=DB_PATH
+    )
+
+else:
+
+    vectorstore = Chroma(
+        persist_directory=DB_PATH,
+        embedding_function=embedding
+    )
 
 retriever = vectorstore.as_retriever(
     search_type="mmr",
     search_kwargs={
-        "k": 1,
+        "k": 3,
         "lambda_mult": 0.7
     }
 )
 
-PROMPT_S = """You will receive a question from a student taking the Intro to AI course.
-Answer the question using only the provided context."""
+PROMPT_S = PROMPT_S = """
+You are an AI tutor for the Intro to AI course.
+
+Answer ONLY using the provided context.
+
+If the provided context does not contain the answer to the user's question, reply exactly:
+
+"I couldn't find the answer in the course notes."
+
+Do not guess.
+Do not use your own knowledge.
+Do not answer from general knowledge.
+"""
 
 PROMPT_TEMPLATE_H = """This is the question:
 {question}
